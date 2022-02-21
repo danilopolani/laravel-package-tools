@@ -3,6 +3,8 @@
 namespace Spatie\LaravelPackageTools;
 
 use Carbon\Carbon;
+use Illuminate\Foundation\Http\Kernel;
+use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
@@ -38,9 +40,12 @@ abstract class PackageServiceProvider extends ServiceProvider
         return $this;
     }
 
-    public function boot()
+    public function boot(Kernel $kernel)
     {
         $this->bootingPackage();
+
+        /** @var \Illuminate\Routing\Router $router */
+        $router = $this->app->make(Router::class);
 
         if ($this->app->runningInConsole()) {
             foreach ($this->package->configFileNames as $configFileName) {
@@ -85,6 +90,18 @@ abstract class PackageServiceProvider extends ServiceProvider
 
         if (! empty($this->package->commands)) {
             $this->commands($this->package->commands);
+        }
+
+        foreach ($this->package->globalMiddleware as $globalMiddleware) {
+            $kernel->pushMiddleware($globalMiddleware);
+        }
+
+        foreach ($this->package->middlewareGroups as $routerGroupName => $middlewareClassName) {
+            $router->pushMiddlewareToGroup($routerGroupName, $middlewareClassName);
+        }
+
+        foreach ($this->package->middleware as $middlewareAlias => $middlewareClassName) {
+            $router->aliasMiddleware($middlewareAlias, $middlewareClassName);
         }
 
         if ($this->package->hasTranslations) {

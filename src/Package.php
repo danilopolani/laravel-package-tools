@@ -24,6 +24,12 @@ class Package
 
     public array $commands = [];
 
+    public array $globalMiddleware = [];
+
+    public array $middlewareGroups = [];
+
+    public array $middleware = [];
+
     public array $viewComponents = [];
 
     public array $sharedViewData = [];
@@ -143,6 +149,31 @@ class Package
     public function hasCommands(...$commandClassNames): self
     {
         $this->commands = array_merge($this->commands, collect($commandClassNames)->flatten()->toArray());
+
+        return $this;
+    }
+
+    public function hasGlobalMiddleware(...$globalMiddlewareClassNames): self
+    {
+        $this->globalMiddleware = array_merge($this->globalMiddleware, collect($globalMiddlewareClassNames)->flatten()->toArray());
+
+        return $this;
+    }
+
+    public function hasGroupMiddleware(string $routerGroupName, string $middlewareClassName): self
+    {
+        if (! array_key_exists($routerGroupName, $this->middlewareGroups)) {
+            $this->middlewareGroups[$routerGroupName] = [];
+        }
+
+        $this->middlewareGroups[$routerGroupName][] = $middlewareClassName;
+
+        return $this;
+    }
+
+    public function hasMiddleware(string $middlewareAlias, string $middlewareClassName): self
+    {
+        $this->middleware[$middlewareAlias] = $middlewareClassName;
 
         return $this;
     }
